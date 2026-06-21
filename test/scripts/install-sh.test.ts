@@ -5,6 +5,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 const SCRIPT_PATH = "scripts/install.sh";
+const VERSION_PARSE_HELPER_PATH = "scripts/docker/install-sh-common/version-parse.sh";
 
 function runInstallShell(script: string, env: NodeJS.ProcessEnv = {}) {
   return spawnSync("bash", ["-c", script], {
@@ -430,6 +431,70 @@ describe("install.sh", () => {
     expect(script).toContain("activate_repo_pnpm_version()");
     expect(script).toContain('corepack prepare "pnpm@${version}" --activate');
     expect(script).toContain('activate_repo_pnpm_version "$repo_dir"');
+  });
+});
+
+describe("install.sh version helpers", () => {
+  it("prefers the latest published baseline older than the candidate when latest is newer", () => {
+    const result = spawnSync(
+      "bash",
+      [
+        "-c",
+        [
+          "set -euo pipefail",
+          `source ${JSON.stringify(VERSION_PARSE_HELPER_PATH)}`,
+          "quiet_npm() {",
+          '  if [[ "$1" == "view" && "$2" == "openclaw" && "$3" == "versions" && "$4" == "--json" ]]; then',
+          `    printf '%s' '${JSON.stringify(["2026.5.15", "2026.5.16", "2026.5.17", "2026.6.9"])}'`,
+          "    return 0",
+          "  fi",
+          "  return 1",
+          "}",
+          'printf "%s" "$(resolve_openclaw_update_baseline_version openclaw 2026.5.17 latest)"',
+        ].join("\n"),
+      ],
+      {
+        cwd: process.cwd(),
+        encoding: "utf8",
+        env: {
+          ...process.env,
+        },
+      },
+    );
+
+    expect(result.status).toBe(0);
+    expect(result.stdout).toBe("2026.5.16");
+  });
+
+  it("skips prerelease baselines when the candidate is a stable release", () => {
+    const result = spawnSync(
+      "bash",
+      [
+        "-c",
+        [
+          "set -euo pipefail",
+          `source ${JSON.stringify(VERSION_PARSE_HELPER_PATH)}`,
+          "quiet_npm() {",
+          '  if [[ "$1" == "view" && "$2" == "openclaw" && "$3" == "versions" && "$4" == "--json" ]]; then',
+          `    printf '%s' '${JSON.stringify(["2026.6.7", "2026.6.8-beta.2", "2026.6.8", "2026.6.9-beta.1", "2026.6.9"])}'`,
+          "    return 0",
+          "  fi",
+          "  return 1",
+          "}",
+          'printf "%s" "$(resolve_openclaw_update_baseline_version openclaw 2026.6.9 latest)"',
+        ].join("\n"),
+      ],
+      {
+        cwd: process.cwd(),
+        encoding: "utf8",
+        env: {
+          ...process.env,
+        },
+      },
+    );
+
+    expect(result.status).toBe(0);
+    expect(result.stdout).toBe("2026.6.8");
   });
 });
 
