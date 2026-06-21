@@ -43,10 +43,14 @@ describe("test-install-sh-docker", () => {
     );
     expect(script).toContain('quiet_npm pack "${PACKAGE_NAME}@${UPDATE_BASELINE_VERSION}"');
     expect(script).toContain('UPDATE_BASELINE_VERSION="$(');
+    expect(script).toContain("resolve_openclaw_update_baseline_version");
+    expect(script).toContain("Use update baseline not newer than candidate");
     expect(runner).toContain(
       'UPDATE_BASELINE_VERSION="${OPENCLAW_INSTALL_UPDATE_BASELINE:-latest}"',
     );
     expect(runner).toContain("resolve_update_baseline_version");
+    expect(runner).toContain("resolve_openclaw_update_baseline_version");
+    expect(runner).toContain("Use update baseline not newer than candidate");
     expect(runner).toContain('quiet_npm view "${PACKAGE_NAME}@${UPDATE_BASELINE_VERSION}" version');
     expect(workflow).toContain(
       "OPENCLAW_INSTALL_SMOKE_UPDATE_BASELINE: ${{ inputs.update_baseline_version || 'latest' }}",

@@ -295,6 +295,17 @@ process.stdout.write(last.version);
     echo "ERROR: packed update version ${packed_update_version} does not match expected ${UPDATE_EXPECT_VERSION}" >&2
     exit 1
   fi
+  local requested_update_baseline_version
+  requested_update_baseline_version="$UPDATE_BASELINE_VERSION"
+  UPDATE_BASELINE_VERSION="$(
+    resolve_openclaw_update_baseline_version \
+      "$PACKAGE_NAME" \
+      "$UPDATE_EXPECT_VERSION" \
+      "$UPDATE_BASELINE_VERSION"
+  )"
+  if [[ "$requested_update_baseline_version" == "latest" && "$UPDATE_BASELINE_VERSION" != "latest" ]]; then
+    echo "==> Use update baseline not newer than candidate: $UPDATE_BASELINE_VERSION (requested latest, candidate $UPDATE_EXPECT_VERSION)"
+  fi
 
   echo "==> Pack baseline tgz: ${PACKAGE_NAME}@${UPDATE_BASELINE_VERSION}"
   quiet_npm pack "${PACKAGE_NAME}@${UPDATE_BASELINE_VERSION}" --json --pack-destination "$UPDATE_DIR" >"$baseline_pack_json_file"

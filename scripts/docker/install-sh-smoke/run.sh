@@ -132,8 +132,20 @@ npm_install_global() {
 }
 
 resolve_update_baseline_version() {
+  local requested_baseline_version
+  requested_baseline_version="$UPDATE_BASELINE_VERSION"
   if [[ -n "$UPDATE_BASELINE_TAG_URL" ]]; then
     return
+  fi
+
+  UPDATE_BASELINE_VERSION="$(
+    resolve_openclaw_update_baseline_version \
+      "$PACKAGE_NAME" \
+      "$UPDATE_EXPECT_VERSION" \
+      "$UPDATE_BASELINE_VERSION"
+  )"
+  if [[ "$requested_baseline_version" == "latest" && "$UPDATE_BASELINE_VERSION" != "latest" ]]; then
+    echo "==> Use update baseline not newer than candidate: $UPDATE_BASELINE_VERSION (requested latest, candidate $UPDATE_EXPECT_VERSION)"
   fi
 
   local resolved_version
